@@ -7,7 +7,10 @@ package org.jetbrains.compose.web.core.tests
 
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.*
+import org.jetbrains.compose.web.css.selectors.className
 import org.jetbrains.compose.web.css.selectors.desc
+import org.jetbrains.compose.web.css.selectors.plus
+import org.jetbrains.compose.web.css.selectors.sibling
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.stringPresentation
 import org.w3c.dom.HTMLElement
@@ -92,6 +95,18 @@ object AppStylesheet : StyleSheet() {
     val withNestedWithExplicitSelf by style {
         color(Color.green)
         desc(self, "h1") style {
+            color(Color.lime)
+        }
+    }
+
+    val parent by style {
+        (sibling(self, self)) {
+            color(Color.red)
+        }
+    }
+
+    val child by style {
+        (className(parent) + ":hover " + self) {
             color(Color.lime)
         }
     }
@@ -219,6 +234,36 @@ class CSSVariableTests {
             generatedRules,
             """
                 .AppStylesheet-withNestedWithImplicitSelf2Layers h1 span {
+                    color: red;
+                }
+            """.trimIndent(),
+            "Nested selector with implicit self isn't generated correctly"
+        )
+    }
+
+    @Test
+    fun testCombine() = runTest {
+        val generatedRules = AppStylesheet.cssRules.map { it.stringPresentation() }
+
+        assertContains(
+            generatedRules,
+            """
+                .AppStylesheet-parent:hover .AppStylesheet-child {
+                    color: lime;
+                }
+            """.trimIndent(),
+            "Nested selector with implicit self isn't generated correctly"
+        )
+    }
+
+    @Test
+    fun testSibling() = runTest {
+        val generatedRules = AppStylesheet.cssRules.map { it.stringPresentation() }
+
+        assertContains(
+            generatedRules,
+            """
+                .AppStylesheet-parent ~ .AppStylesheet-parent {
                     color: red;
                 }
             """.trimIndent(),
